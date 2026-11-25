@@ -24,6 +24,7 @@ public class testController {
 
  @GetMapping("/samples")
  public List<Map<String, Object>> samples() {
+	 System.out.println("Git test");
      return jdbcTemplate.queryForList("SELECT id, name, created_dt FROM app.sample ORDER BY id");
  }
 }
