@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.2.0</version>
+		<version>4.0.10</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.security</groupId>
@@ -29,18 +29,47 @@
 	</scm>
 	<properties>
 		<java.version>25</java.version>
+		<!-- Boot BOM이 관리하지 않는 라이브러리 버전 -->
+		<mybatis-spring-boot.version>4.0.1</mybatis-spring-boot.version>
 	</properties>
 	<dependencies>
-    <!-- 웹 (Controller, REST API) -->
+    <!-- 웹 (Spring MVC, 내장 Tomcat 11) -->
     <dependency>
         <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
+        <artifactId>spring-boot-starter-webmvc</artifactId>
     </dependency>
 
-    <!-- JDBC (JdbcTemplate, DataSource, 커넥션 풀) -->
+    <!-- JSP 렌더링 -->
+    <dependency>
+        <groupId>org.apache.tomcat.embed</groupId>
+        <artifactId>tomcat-embed-jasper</artifactId>
+    </dependency>
+
+    <!-- Jakarta JSTL -->
+    <dependency>
+        <groupId>jakarta.servlet.jsp.jstl</groupId>
+        <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.glassfish.web</groupId>
+        <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+    </dependency>
+
+    <!-- MyBatis (spring-boot-starter-jdbc, HikariCP 포함) -->
+    <dependency>
+        <groupId>org.mybatis.spring.boot</groupId>
+        <artifactId>mybatis-spring-boot-starter</artifactId>
+        <version>${mybatis-spring-boot.version}</version>
+    </dependency>
+
+    <!-- Flyway DB 마이그레이션 -->
     <dependency>
         <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-jdbc</artifactId>
+        <artifactId>spring-boot-starter-flyway</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.flywaydb</groupId>
+        <artifactId>flyway-database-postgresql</artifactId>
     </dependency>
 
     <!-- PostgreSQL 드라이버 -->
@@ -63,6 +92,30 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<!-- 재현 가능한 빌드를 위한 Java/Maven 버전 및 동적 버전 금지 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>enforce-build-rules</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<requireJavaVersion>
+									<version>[25,26)</version>
+								</requireJavaVersion>
+								<requireMavenVersion>
+									<version>[3.9,)</version>
+								</requireMavenVersion>
+								<banDynamicVersions/>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

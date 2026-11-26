@@ -22,7 +22,7 @@ Project202701은 **에이전트리스 OS·소프트웨어 인벤토리 및 취�
 
 ## 2026-11-26 박소명 결정 기록 파일
 1. `AGENTS.md`와 설계 문서는 충돌 및 변경 결정을 `docs/decisions.md`에 기록하라고 하지만, 해당 파일은 다른 개발자가 사용하므로 Claude는 `docs/decisions.md`에 기록하거나 수정하지 않는다.
-2. Claude는 다음 내용을 `docs/decisions-claude.md`에 기록한다.
+2. Claude는 다음 내용을 `Doc/docs/decisions-claude.md`에 기록한다.
    - 기획안·설계 문서·`AGENTS.md`·`CLAUDE.md` 사이의 충돌과 사용자가 결정한 내용
    - 기술 스택, 라이브러리, 구조 등 문서 기준에서 벗어나는 변경
 3. 각 항목에는 날짜, 충돌 내용(관련 문서와 절), 대안, 결정 내용, 영향 범위, 결정자를 적는다.
