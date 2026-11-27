@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.security</groupId>
+		<artifactId>project202701</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+	<artifactId>project202701-collector</artifactId>
+	<packaging>jar</packaging>
+	<!-- 독립 실행 수집기 JAR. 웹 의존성 금지, HTTP 업무 API를 제공하지 않는다.
+	     SSH/WinRM 라이브러리(MINA SSHD, MetricsHub WinRM)는 DEV-04/05 승인 후 추가한다. -->
+
+	<dependencies>
+		<dependency>
+			<groupId>com.security</groupId>
+			<artifactId>project202701-common</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.security</groupId>
+			<artifactId>project202701-persistence</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

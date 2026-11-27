@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.security</groupId>
+		<artifactId>project202701</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+	<artifactId>project202701-common</artifactId>
+	<packaging>jar</packaging>
+	<!-- 웹·수집기 공용 enum, DTO, 버전 비교기, 검증 정책. 비밀 및 SSH/WinRM 코드는 두지 않는다. -->
+
+</project>

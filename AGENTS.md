@@ -1,11 +1,23 @@
-# Project202701 — AI 공통 개발 및 프로젝트 관리 지침
+﻿# Project202701 — AI 공통 개발 및 프로젝트 관리 지침
 
 - 적용 대상: Codex, Claude Code 및 저장소에서 작업하는 모든 AI 개발 도구
 - 기준일: 2026-11-27 (v1.4 보안 코딩/취약점 점검 유보 정책)
 - 적용 파일: 저장소 루트 `AGENTS.md`, `CLAUDE.md` (UTF-8, 동일 내용 유지)
 - 목적: 요구사항에 맞는 구현, 안전한 협업, 보안 방어와 코드 구현 완성, 개발자 검증을 위한 인수인계
 
+<!--
+변경 이력 2026-11-27 (DEV-00 WP-00-01, 근거: Doc/docs/decisions-claude.md D-005/D-006/D-007/D-009)
+- §1: 단일 WAR 전제 문구를 실제 멀티모듈 구조(D-006)로 갱신.
+- §2.1: 기준 문서 경로를 저장소 실제 위치로 정리하고 v1.3 작업지시서, dependency-lock, 이전 기획(v0.1/v0.2) 행 추가.
+- §3.1: 좌표(D-009), 패키징·모듈(D-006), Wrapper 3.9.16(D-007), Flyway 위치(D-005), 플러그인 선언 모듈 반영.
+- §3.2: 직접 의존성 표에 선언 모듈 열과 내부 모듈 참조 규칙 추가. 버전·scope는 변경 없음(재배치만).
+- §3.3: 수집기 JAR 모듈 승인 완료 표시, integration-tests 모듈은 §0에 따라 AI 생성 제외 명시.
+- 업무 요구사항, 보안 원칙, 테스트 정책(§0, §4~§11)은 변경하지 않았다.
+-->
+
+
 ## 0. AI 작업 범위·보안 코딩 및 취약점 점검 유보 (최우선 작업 정책)
+
 
 - AI는 요구사항 분석, 설계 계약 확인, 제품 코드 구현, 보안 방어 코드 작성, 오류 처리, 데이터 정합성, 소스 수준 정적 검토 및 문서 정리에 집중한다.
 - 단위 테스트는 개발자가 담당한다. AI는 단위 테스트를 자동 생성·수정·실행하지 않는다. 통합·회귀·UI/E2E·성능·부하·복구·smoke test·UAT·실제 서버 수집 등 일반 기능 검증도 개발자가 직접 수행한다. 별도 취약점 점검은 개발 완료 후 필요 시 별도 승인 대상으로 유보한다.
@@ -25,7 +37,9 @@
 Project202701은 에이전트리스 OS·소프트웨어 인벤토리 및 취약점 영향 조사 시스템이다. 등록된 서버에서 별도 수집기가 SSH 및 향후 WinRM을 통해 OS·소프트웨어 정보를 주기적으로 수집한다. 관리자는 자동 관측값과 관리값을 기준으로 영향 후보를 검색하고, 취약 여부 및 조치 결과를 근거와 함께 직접 기록한다.
 
 - 웹은 관리·조회·작업 등록을 담당하고, 수집기는 승인된 읽기 전용 원격 수집을 담당한다.
-- 웹 WAR, 수집기 JAR 분리를 목표로 한다. 현재 제공된 `pom.xml`은 WAR 프로젝트이며 수집기 모듈이 이미 존재한다고 가정하지 않는다.
+- 웹 WAR, 수집기 JAR 분리 구조다. 2026-11-27 Maven 멀티모듈(common, persistence, db-migration, web, collector)로 전환했다(D-006). 수집기 모듈은 실행 골격만 있으며 작업 처리·어댑터는 DEV-03 이후 구현한다.
+  <!-- 변경 사유: 이전 문구는 "단일 WAR 프로젝트, 수집기 모듈 존재 가정 금지"였다. 기획안 v0.3 §12.2 멀티모듈 구조를 D-006으로 승인·적용했으므로 현재 구조를 기준으로 기술한다. integration-tests는 §3.3 참조. -->
+
 - 취약점 DB 자체 운영, 자동 패치, 자동 취약 판정 엔진, 상주 에이전트, 임의 원격 명령 실행은 범위 밖이다.
 - 승인된 기능의 완전한 구현, 보안 방어, 데이터 정합성, 유지보수성 및 자원 관리를 우선한다. 실행 검증과 테스트는 개발자가 담당한다.
 
@@ -37,12 +51,24 @@ Project202701은 에이전트리스 OS·소프트웨어 인벤토리 및 취약�
 |---|---|---|
 | AI 공통 지침 | `AGENTS.md`, `CLAUDE.md` | 작업 규칙 및 불변 제약 |
 | 빌드 기준 | `pom.xml`, 실제 모듈별 POM | 사용 가능한 의존성, 버전, 패키징 |
+
 | 통합 화면 계약 v1.4 | `docs/ui-spec.md` 또는 `Doc/설계/Project202701_통합화면설계_및_AI개발지시서_v1.4.md` | FR/UI/액션/API/시험 요구사항 |
 | 기획안 v0.4 | `docs/planning-v0.4.md` (`Project202701_기획안_v0.4_프로토타입_개발기준.md`) | 상세 업무 및 아키텍처 기준 |
 | 통합 화면설계 및 작업지시서 v1.4 | `Doc/설계/Project202701_화면설계_및_AI개발작업지시서_통합_v1.4.pptx` | 화면, WP 및 구현/인수 기준 |
-| 결정 기록 | 2.3절 참조 | 승인된 변경, 충돌, 미결정 |
 
-- 경로는 기존 두 지침에 기재된 후보이다. 실제 저장소에서 파일 존재, 버전, 내용 및 Git 이력을 확인한다. 임의로 문서를 생성·이동·병합하거나 어느 한쪽을 최신이라고 단정하지 않는다.
+| 결정 기록 | 2.3절 참조 | 승인된 변경, 충돌, 미결정 |
+| 의존성 기록 | `Doc/docs/dependency-lock.md` | 모듈 좌표, 직접·주요 전이 의존성 버전, 라이선스, 승인 대기 라이브러리 |
+| 이전 기획 (참고) | `Doc/기획/Project202701_기획안_v0.1.pptx`, `Doc/기획/Project202701_기획안_v0.2_통합상세설계.md` | v0.3이 대체. v0.2 §16/§20 등 v0.3이 참조하는 절만 확인 |
+
+<!--
+변경 사유: 이전 표는 `docs/ui-spec.md`, `docs/planning-v0.3.md` 등 저장소에 없는 후보 경로를 적었다.
+- 실제 파일은 `Doc/설계`, `Doc/기획` 아래에 있으므로 실제 경로로 바꿨다. 설계 문서(v1.1 §6·§9.1, v0.3 §12.2) 본문의 `docs/...` 표기는 수정하지 않고 아래 목록 첫 항목에서 대응 관계만 밝힌다.
+- v1.3 pptx(2026-11-27): 최신 지침 반영 DEV/WP 작업지시서. v1.1의 UI/FR/T ID와 수용 기준을 유지하므로 v1.1 md를 대체하지 않고 함께 사용한다.
+- dependency-lock: 기획안 v0.3 §3 "버전 관리"가 요구하는 의존성 기록 파일. 위치는 결정 기록과 같은 `Doc/docs`.
+- v0.1/v0.2: v0.3이 대체했으나 v0.3 §10.5·§18이 v0.2 §20 참고자료를 계속 참조하므로 참고용으로만 남긴다.
+-->
+
+- 위 경로는 2026-11-27 저장소에서 확인한 실제 위치다. 설계 문서 안에 적힌 `docs/ui-spec.md`, `docs/planning-v0.3.md`는 각각 위 v1.1 md, v0.3 md를 가리킨다. 작업 시 파일 존재, 버전, 내용 및 Git 이력을 다시 확인한다. 임의로 문서를 생성·이동·병합하거나 어느 한쪽을 최신이라고 단정하지 않는다.
 - 같은 문서의 복수 사본 내용이 다르면 충돌로 기록하고 기준 파일을 사용자에게 확인한다. 미확인 문서의 요구사항 ID나 상세 내용은 만들어내지 않는다.
 - 구현 전에 해당 기능의 명세 절 및 관련 승인 결정을 읽는다. 원안 확정, 개선 권고, 미결정(기획안 §16)을 구분한다. 개선 권고와 미결정은 승인 전 확정 요구사항이 아니다.
 
@@ -68,37 +94,58 @@ Project202701은 에이전트리스 OS·소프트웨어 인벤토리 및 취약�
 
 ## 3. 기술 스택 및 의존성 기준
 
-### 3.1 제공된 pom.xml 기준 스냅샷
+### 3.1 pom.xml 기준 스냅샷 (2026-11-27)
 
 | 항목 | 설정값 또는 상태 |
 |---|---|
-| Maven 좌표 | `com.security:demo:0.0.1-SNAPSHOT` |
-| 패키징 | `war` |
+| Maven 좌표 | 루트 `com.security:project202701:0.0.1-SNAPSHOT` (D-009) |
+| 패키징 | 루트 `pom`(집계/부모). 모듈: `project202701-common`(jar), `project202701-persistence`(jar), `project202701-db-migration`(jar), `project202701-web`(war), `project202701-collector`(jar) (D-006) |
 | Spring Boot Parent | `org.springframework.boot:spring-boot-starter-parent:4.0.10` |
 | Java | `java.version=25`, Enforcer `[25,26)` |
-| Maven | Enforcer `[3.9,)` |
+| Maven | Wrapper 배포판 3.9.16 (D-007), Enforcer `[3.9,)` |
 | MyBatis Starter | `org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.1` |
 | 웹 | Spring MVC, 내장 Tomcat 11 목표(POM 주석), JSP/Jakarta JSTL |
 | 프런트엔드 | HTML5, CSS3, Vanilla JS (설계 기준) |
-| DB | PostgreSQL 18 목표(서버 버전은 POM 미확정), Flyway Community 목표 |
-| 빌드 플러그인 | `spring-boot-maven-plugin`, `maven-enforcer-plugin` (부모 관리 버전 확인) |
+| DB | PostgreSQL 18 목표(서버 버전은 POM 미확정), Flyway Community는 `db-migration` 모듈 전용 (D-005) |
+| 빌드 플러그인 | `spring-boot-maven-plugin`(db-migration, web, collector), `maven-enforcer-plugin`(루트, 전 모듈 상속) (부모 관리 버전 확인) |
 | Enforcer | `enforce-build-rules`, `requireJavaVersion`, `requireMavenVersion`, `banDynamicVersions` |
 
 실제 작업 시 위 스냅샷보다 현재 브랜치의 POM이 우선한다. 버전 변경이 발견되면 승인 기록 및 변경 이력을 확인한다. 선언된 버전은 해석·다운로드·실행 성공을 보장하지 않는다.
 
-### 3.2 직접 선언된 의존성 (제공된 POM)
+<!--
+변경 사유 (이전 스냅샷 대비):
+- 좌표 `com.security:demo` → `com.security:project202701`: 초기 생성명을 저장소·하위 모듈명(`project202701-*`)에 맞춤 (D-009).
+- 패키징 `war` → 루트 `pom` + 5개 모듈: 기획안 v0.3 §12.2 멀티모듈 (D-006). WAR는 web 모듈만 해당.
+- Maven Wrapper 3.10.1 → 3.9.16: 기획안 v0.3 §3 "Maven Wrapper 3.9.x" 기준 (D-007). Enforcer `[3.9,)`는 그대로.
+- Flyway: 기획안 v0.3 §12.2 "독립 실행 단위가 migration 적용, web/collector 자동 migration 금지"에 따라 db-migration 모듈 전용 (D-005).
+- spring-boot-maven-plugin: 실행 단위(db-migration, web, collector)에만 둔다. common/persistence는 라이브러리 jar.
+- Spring Boot 4.0.10, Java 25, MyBatis 4.0.1, Enforcer 규칙은 변경 없음.
+-->
 
-| groupId:artifactId | 버전 | scope |
-|---|---|---|
-| `org.springframework.boot:spring-boot-starter-webmvc` | 부모 관리 | compile(기본) |
-| `org.apache.tomcat.embed:tomcat-embed-jasper` | 부모 관리 | compile(기본) |
-| `jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api` | 부모 관리 | compile(기본) |
-| `org.glassfish.web:jakarta.servlet.jsp.jstl` | 부모 관리 | compile(기본) |
-| `org.mybatis.spring.boot:mybatis-spring-boot-starter` | 4.0.1 | compile(기본) |
-| `org.springframework.boot:spring-boot-starter-flyway` | 부모 관리 | compile(기본) |
-| `org.flywaydb:flyway-database-postgresql` | 부모 관리 | compile(기본) |
-| `org.postgresql:postgresql` | 부모 관리 | runtime |
-| `org.springframework.boot:spring-boot-starter-test` | 부모 관리 | test |
+
+### 3.2 직접 선언된 의존성 (모듈별 POM)
+
+| groupId:artifactId | 버전 | scope | 선언 모듈 |
+|---|---|---|---|
+| `org.springframework.boot:spring-boot-starter-webmvc` | 부모 관리 | compile(기본) | web |
+| `org.apache.tomcat.embed:tomcat-embed-jasper` | 부모 관리 | compile(기본) | web |
+| `jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api` | 부모 관리 | compile(기본) | web |
+| `org.glassfish.web:jakarta.servlet.jsp.jstl` | 부모 관리 | compile(기본) | web |
+| `org.mybatis.spring.boot:mybatis-spring-boot-starter` | 4.0.1 (루트 `dependencyManagement`) | compile(기본) | persistence |
+| `org.springframework.boot:spring-boot-starter-flyway` | 부모 관리 | compile(기본) | db-migration |
+| `org.flywaydb:flyway-database-postgresql` | 부모 관리 | compile(기본) | db-migration |
+| `org.postgresql:postgresql` | 부모 관리 | runtime | persistence, db-migration |
+| `org.springframework.boot:spring-boot-starter-test` | 부모 관리 | test | web |
+
+- 내부 모듈 참조: web → common, persistence / collector → common, persistence / persistence → common. web과 collector는 서로 의존하지 않으며, web·collector·persistence에는 Flyway를 두지 않는다.
+- BOM 관리 버전과 라이선스는 `Doc/docs/dependency-lock.md`에 기록한다.
+
+<!--
+변경 사유: 단일 POM의 직접 의존성을 모듈별 POM으로 재배치만 했다(D-006). 신규 의존성, 버전·scope 변경은 없다.
+- MyBatis 버전은 루트 `dependencyManagement`에서 관리하고 persistence가 사용한다(web/collector는 persistence를 통해 전이).
+- PostgreSQL JDBC는 DB에 접속하는 persistence와 db-migration에 각각 runtime으로 둔다.
+- web·collector 상호 의존 금지는 §4-2(웹-수집기 직접 통신 금지), Flyway 제한은 D-005를 빌드 구조로 강제하기 위함이다.
+-->
 
 - Spring JDBC, HikariCP, Tomcat, JUnit 등은 스타터의 제공 범위 및 기존 의존성 트리 또는 개발자가 제공한 결과로 확인한다. JDBC 드라이버 버전과 DB 서버 버전을 혼동하지 않는다.
 - 부모 POM이 관리하는 버전을 임의로 명시하거나 최신 버전으로 변경하지 않는다. 정확한 버전·scope·전이 의존성은 기존 `help:effective-pom`, `dependency:tree` 결과 또는 개발자 제공 자료에서 확인한다.
@@ -112,7 +159,13 @@ Project202701은 에이전트리스 OS·소프트웨어 인벤토리 및 취약�
 | Apache MINA SSHD | Linux/Unix SSH 수집 | DEV-04/05 전에 승인 필요 |
 | MetricsHub WinRM Java | Windows 수집 | DEV-05 전에 정확한 좌표·호환성·안전한 사용 방식 검토 및 승인 필요 |
 | Spring Security | 인증·권한·CSRF 구현 후보 | DEV-02 전 구현 방식 확인 및 필요 시 승인 |
-| 수집기 JAR 모듈 | 별도 배포·원격 수집 | DEV-00/03 전 구조 및 모듈 POM 확인·승인 |
+| 수집기 JAR 모듈 | 별도 배포·원격 수집 | 구조 승인 완료(D-006, `collector` 모듈). 원격 접속 라이브러리는 위 MINA SSHD/WinRM 승인 기준을 따른다 |
+| integration-tests 모듈 | DB/큐/실패 시나리오 통합 시험 | 테스트 전용 모듈이므로 0절에 따라 AI가 생성하지 않는다. 개발자가 생성하거나 별도 명시 요청 시 진행 |
+
+<!--
+변경 사유: "수집기 JAR 모듈" 행은 승인 대기였으나 D-006으로 승인·생성되어 상태를 갱신했다.
+integration-tests 행은 기획안 v0.3 §12.2·설계서 v1.1 §6 DEV-00 경로에 포함된 모듈이지만, §0(AI 테스트 생성 금지)과 충돌하므로 제외 사유와 처리 주체를 명시하려고 추가했다. 요구사항에서 삭제한 것이 아니다.
+-->
 
 - 위 라이브러리는 제공된 POM의 직접 의존성에 없다. 다른 모듈이나 전이 의존성 존재 여부는 현재 저장소에서 확인해야 한다. 미등록 라이브러리를 사용 가능하다고 가정하지 않는다.
 - POM에 직접 등록되지 않은 독립 라이브러리를 신규 사용하지 않는다. 승인된 스타터가 공식적으로 제공하는 API는 실제 의존성 트리 및 scope가 확인된 범위에서만 사용한다. 전이 구현체에 직접 결합하거나 신규 API 의존을 추가해야 하면 직접 선언 필요성을 검토하고 승인받는다.
