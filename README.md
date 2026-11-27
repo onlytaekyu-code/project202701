@@ -4,8 +4,8 @@
 
 등록된 서버에서 별도 수집기가 SSH 및 WinRM으로 OS·소프트웨어 정보를 읽기 전용으로 수집한다. 관리자는 웹에서 자동 관측값과 관리값을 기준으로 영향 후보를 검색하고, 취약 여부와 조치 결과를 근거와 함께 기록한다.
 
-- 현재 단계: DEV-00 (프로젝트 골격). 업무 기능은 DEV-01 이후 구현한다.
-- 빌드·기동·DB migration 검증 상태: NOT_RUN (개발자 수행 예정)
+- 현재 단계: DEV-00 (프로젝트 골격) 완료. 업무 기능은 DEV-01 이후 구현한다.
+- DEV-00: DONE (2026-11-27 개발자 확인). Java 25·Maven 3.9.16·PostgreSQL 18, Enforcer, 전체 빌드, WAR/JSP 기동, DB 초기 구성, db-migration 실행, dependency tree 대조. SBOM·취약점 점검은 DEV-00 범위 제외. 상세는 `Doc/docs/dependency-lock.md` 4·5절
 
 ## 구조
 
@@ -51,15 +51,17 @@ project202701/                  루트 집계/부모 POM (com.security:project20
 
 ## 환경 설정
 
-접속 정보와 비밀은 Git에 커밋하지 않는다. 실행 단위별로 계정을 분리한다(결정 기록 D-008 미결정).
+접속 정보와 비밀은 Git에 커밋하지 않는다. 실행 단위별로 계정을 분리하고 모두 환경변수로만 받는다(결정 기록 D-008).
 
-| 실행 단위 | 환경변수 | 용도 |
-|---|---|---|
-| db-migration | `MIGRATION_DB_URL`, `MIGRATION_DB_USERNAME`, `MIGRATION_DB_PASSWORD` | DDL 전용 계정 |
-| collector | `COLLECTOR_DB_URL`, `COLLECTOR_DB_USERNAME`, `COLLECTOR_DB_PASSWORD` | 작업 claim·결과 저장 최소 권한 계정 |
-| web | `web/src/main/resources/application.properties` | 현재 구 테스트 DB 설정 유지 중. DB 교체 시 환경변수 방식으로 정리 예정 |
+| 실행 단위 | 환경변수 | DB 계정 | 용도 |
+|---|---|---|---|
+| db-migration | `MIGRATION_DB_URL`, `MIGRATION_DB_USERNAME`, `MIGRATION_DB_PASSWORD` | `p27_migration` | DDL 전용 |
+| web | `WEB_DB_URL`, `WEB_DB_USERNAME`, `WEB_DB_PASSWORD` | `p27_web` | 웹 런타임 최소 권한 |
+| collector | `COLLECTOR_DB_URL`, `COLLECTOR_DB_USERNAME`, `COLLECTOR_DB_PASSWORD` | `p27_collector` | 작업 claim·결과 저장 최소 권한 |
 
-- 기본값이 없는 환경변수가 비어 있으면 해당 실행 단위는 기동에 실패한다.
+- DB `project202701`, 업무 스키마 `app`. 데이터베이스·계정·스키마는 개발자가 `Doc/DB/sql/00_bootstrap.sql`로 1회 구성한다.
+- 구성 절차, 확인 SQL, 실행 단위별 접속 방법과 문제 해결: [`Doc/DB/Project202701_DB_환경_및_계정_명세.md`](Doc/DB/Project202701_DB_환경_및_계정_명세.md)
+- 환경변수가 비어 있으면 해당 실행 단위는 기동에 실패한다(기본값 없음).
 - web 기본 포트: 8808
 
 ## 빌드 및 실행 (개발자 수행)
@@ -77,7 +79,10 @@ java -version
 ./mvnw dependency:tree
 ./mvnw package                # 테스트 포함
 
-# 1) DB migration (빈 DB에 순차 적용 후 종료)
+# 0) DB 초기 구성 1회 (Doc/DB 명세 4절, 관리자 계정)
+psql -h <host> -p 5432 -U postgres -d postgres -f Doc/DB/sql/00_bootstrap.sql
+
+# 1) DB migration (빈 DB에 순차 적용 후 종료, MIGRATION_DB_* 필요)
 java -jar db-migration/target/project202701-db-migration-0.0.1-SNAPSHOT.jar
 
 # 2) 웹 기동 후 http://localhost:8808/ 에서 JSP 렌더링 확인
@@ -106,6 +111,7 @@ java -jar collector/target/project202701-collector-0.0.1-SNAPSHOT.jar
 | 통합 화면설계·AI 개발지시서 v1.1 | `Doc/설계/Project202701_통합화면설계_및_AI개발지시서_v1.1.md` |
 | 화면설계·AI 개발작업지시서 v1.3 (WP 분해) | `Doc/설계/Project202701_화면설계_및_AI개발작업지시서_통합_v1.3.pptx` |
 | 최종 화면설계서 v1.1 | `Doc/설계/Project202701_최종화면설계서_v1.1.pptx` |
+| DB 환경 및 계정 명세 | `Doc/DB/Project202701_DB_환경_및_계정_명세.md` |
 | Claude 결정 기록 | `Doc/docs/decisions-claude.md` |
 | 의존성 기록 | `Doc/docs/dependency-lock.md` |
 

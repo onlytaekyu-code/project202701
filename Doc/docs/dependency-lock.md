@@ -3,13 +3,13 @@
 - 기준일: 2026-11-27
 - 기준: 기획안 v0.3 §3 "버전 관리", 설계서 v1.3 WP-00-01, `CLAUDE.md` §3
 - 작성: Claude Code (DEV-00 WP-00-01)
-- 상태: IMPLEMENTED. 의존성 해석 검증은 NOT_RUN (개발자 수행 예정)
+- 상태: DONE (2026-11-27 개발자 확인). Java·Maven·PostgreSQL 버전, `validate`, `clean package`, `help:effective-pom`, 전 모듈 `dependency:tree` 결과 반영(5절). SBOM과 취약점 점검은 DEV-00 범위에서 제외
 
 ## 0. 이 문서의 근거와 한계
 
 - 버전은 각 POM의 직접 선언과 로컬 Maven 저장소(`~/.m2`)에 있는 `spring-boot-dependencies:4.0.10` BOM의 관리 버전에서 읽었다.
 - 라이선스는 로컬 저장소에 있는 각 아티팩트 POM(또는 부모 POM)의 `<licenses>` 값을 옮겼다.
-- `dependency:tree`, `help:effective-pom`, SBOM 생성, 취약점 점검은 실행하지 않았다. 전이 의존성 전체 목록과 실제 해석 결과는 개발자가 확인하여 이 문서의 5절에 추가한다.
+- AI는 `dependency:tree`, `help:effective-pom`, SBOM 생성, 취약점 점검을 실행하지 않았다. 4절의 전이 의존성은 개발자가 제공한 `dependency:tree` 출력(2026-11-27)으로 대조했고, 실행 결과는 5절에 기록한다. SBOM과 취약점 점검은 DEV-00 범위에서 제외되어 수행하지 않았다.
 - 선언된 버전이 실제 다운로드·해석·실행 성공을 보장하지 않는다.
 
 ## 1. 빌드 기준
@@ -52,32 +52,84 @@
 
 ## 4. 주요 전이 의존성 (BOM 관리 버전)
 
-스타터 POM에서 확인한 포함 관계와 BOM 관리 버전이다. 실제 해석 여부는 `dependency:tree`로 확인한다.
+개발자가 제공한 전 모듈 `dependency:tree` 출력(2026-11-27, Eclipse m2e, maven-dependency-plugin 3.9.0)으로 확인한 해석 결과다. "모듈" 열은 해당 아티팩트가 포함되는 실행 단위다. 라이선스 중 "(확인 필요)"는 아티팩트 POM 대조 전의 공개 정보 기준 값이다.
+
+### 4.1 공통 (common·persistence 경유 또는 Boot starter 공통)
+
+| 아티팩트 | 버전 | 경유 | 모듈 | 라이선스 |
+|---|---|---|---|---|
+| Spring Framework (`spring-core`, `-context`, `-beans`, `-aop`, `-expression`, `-tx`, `-jdbc`) | 7.0.11 | Boot starter | 전체 | Apache-2.0 |
+| Spring Boot (`spring-boot`, `-autoconfigure`, `-jdbc`, `-sql`, `-transaction`, `-persistence`) | 4.0.10 | Boot starter | 전체 | Apache-2.0 |
+| `com.zaxxer:HikariCP` | 7.0.2 | `spring-boot-starter-jdbc` | 전체 | Apache-2.0 |
+| `org.mybatis:mybatis` | 3.5.19 | MyBatis starter (`mybatis.version`) | persistence, web, collector | Apache-2.0 (mybatis-parent) |
+| `org.mybatis:mybatis-spring` | 4.0.0 | MyBatis starter (`mybatis-spring.version`) | persistence, web, collector | Apache-2.0 (mybatis-parent) |
+| `org.mybatis.spring.boot:mybatis-spring-boot-autoconfigure` | 4.0.1 | MyBatis starter | persistence, web, collector | Apache-2.0 |
+| `org.postgresql:postgresql` | 42.7.14 (runtime) | 직접 선언 | 전체 | BSD-2-Clause |
+| `org.checkerframework:checker-qual` | 3.55.1 (runtime) | `postgresql` | 전체 | MIT (확인 필요) |
+| SLF4J (`slf4j-api`, `jul-to-slf4j`) / Logback (`logback-classic`, `-core`) | 2.0.20 / 1.5.38 | `spring-boot-starter-logging` | 전체 | MIT / EPL-1.0 · LGPL-2.1 (확인 필요) |
+| `org.apache.logging.log4j:log4j-to-slf4j` / `log4j-api` | 2.25.5 | `spring-boot-starter-logging` | 전체 | Apache-2.0 (확인 필요) |
+| `io.micrometer:micrometer-observation` / `micrometer-commons` | 1.16.9 | `spring-context` | 전체 | Apache-2.0 (확인 필요) |
+| `commons-logging:commons-logging` | 1.3.6 | `spring-core` | 전체 | Apache-2.0 (확인 필요) |
+| `org.jspecify:jspecify` | 1.0.1 | `spring-core` | 전체 | Apache-2.0 (확인 필요) |
+| `jakarta.annotation:jakarta.annotation-api` | 3.0.0 | `spring-boot-starter` | 전체 | EPL-2.0 / GPL-2.0 with CPE (확인 필요) |
+| `org.yaml:snakeyaml` | 2.5 | `spring-boot-starter` | 전체 | Apache-2.0 (확인 필요) |
+
+### 4.2 web 전용
 
 | 아티팩트 | 버전 | 경유 | 라이선스 |
 |---|---|---|---|
-| Spring Framework | 7.0.11 | 모든 Boot starter | Apache-2.0 |
-| Apache Tomcat (embed) | 11.0.27 | `spring-boot-starter-tomcat` (webmvc) | Apache-2.0 |
-| Jakarta Servlet API | 6.1.0 | Tomcat 11 | EPL-2.0 / GPL-2.0 with CPE |
-| `spring-boot-starter-jdbc` / HikariCP | 4.0.10 / 7.0.2 | MyBatis starter, Flyway starter | Apache-2.0 |
-| `org.mybatis:mybatis` | 3.5.19 | MyBatis starter (`mybatis.version`) | Apache-2.0 (mybatis-parent) |
-| `org.mybatis:mybatis-spring` | 4.0.0 | MyBatis starter (`mybatis-spring.version`) | Apache-2.0 (mybatis-parent) |
-| `org.flywaydb:flyway-core` | 11.14.1 | Flyway starter | Apache-2.0 |
-| Jackson | 3.1.8 (BOM) | `spring-boot-starter-jackson` (webmvc) | Apache-2.0 |
-| SLF4J / Logback | 2.0.20 / 1.5.38 | `spring-boot-starter-logging` | MIT / EPL-1.0 · LGPL-2.1 (개발자 확인 필요) |
-| JUnit Jupiter / Mockito / AssertJ | 6.0.3 / 5.20.0 / 3.27.7 | `spring-boot-starter-test` (test) | EPL-2.0 / MIT / Apache-2.0 (개발자 확인 필요) |
+| Tomcat (`tomcat-embed-core`, `-el`, `-websocket`, `tomcat-annotations-api`) | 11.0.27 | jasper, `spring-boot-starter-tomcat` | Apache-2.0 |
+| `org.eclipse.jdt:ecj` | 3.46.100 | `tomcat-embed-jasper` (JSP 컴파일러) | EPL-2.0 (확인 필요) |
+| `jakarta.servlet:jakarta.servlet-api` | 6.1.0 | `jakarta.servlet.jsp.jstl-api` | EPL-2.0 / GPL-2.0 with CPE |
+| `jakarta.el:jakarta.el-api` | 5.0.0 | `jakarta.servlet.jsp.jstl-api` | EPL-2.0 / GPL-2.0 with CPE (확인 필요) |
+| Jackson 3 (`tools.jackson.core:jackson-databind`, `jackson-core`) | 3.1.8 | `spring-boot-starter-jackson` | Apache-2.0 |
+| `com.fasterxml.jackson.core:jackson-annotations` | 2.21 | Jackson 3 (애너테이션은 2.x 좌표 공유) | Apache-2.0 |
+| Spring Web (`spring-web`, `spring-webmvc`), Boot web (`-web-server`, `-tomcat`, `-servlet`, `-webmvc`, `-http-converter`, `-jackson`) | 7.0.11 / 4.0.10 | `spring-boot-starter-webmvc` | Apache-2.0 |
 
-## 5. 개발자 확인 결과 (미제공)
+### 4.3 db-migration 전용
+
+| 아티팩트 | 버전 | 경유 | 라이선스 |
+|---|---|---|---|
+| `org.flywaydb:flyway-core` | 11.14.1 | `flyway-database-postgresql` | Apache-2.0 |
+| `org.springframework.boot:spring-boot-flyway` | 4.0.10 | `spring-boot-starter-flyway` | Apache-2.0 |
+| Jackson 2 (`com.fasterxml.jackson.core:jackson-databind`, `jackson-core`) / `jackson-annotations` | 2.21.8 / 2.21 | `flyway-core` | Apache-2.0 |
+
+### 4.4 test scope (web, 실행 산출물 미포함)
+
+| 아티팩트 | 버전 | 라이선스 |
+|---|---|---|
+| JUnit Jupiter / Platform | 6.0.3 | EPL-2.0 (확인 필요) |
+| Mockito (`mockito-core`, `mockito-junit-jupiter`) / Byte Buddy / Objenesis | 5.20.0 / 1.17.8 / 3.3 | MIT / Apache-2.0 / Apache-2.0 (확인 필요) |
+| AssertJ / Hamcrest / Awaitility | 3.27.7 / 3.0 / 4.3.0 | Apache-2.0 / BSD-3-Clause / Apache-2.0 (확인 필요) |
+| JsonPath / json-smart / JSONassert / XMLUnit | 2.10.0 / 2.6.1 / 1.5.3 / 2.10.4 | Apache-2.0 / Apache-2.0 / Apache-2.0 / Apache-2.0 (확인 필요) |
+| `spring-test`, `spring-boot-test`, `spring-boot-test-autoconfigure` | 7.0.11 / 4.0.10 | Apache-2.0 |
+| 기타 (`jakarta.xml.bind-api` 4.0.5, `jakarta.activation-api` 2.1.4, `asm` 9.11.1, `opentest4j` 1.3.0, `apiguardian-api` 1.1.2, `android-json` 0.0.20131108.vaadin1) | - | 확인 필요 |
+
+### 4.5 대조 결과 (2026-11-27)
+
+- 전 모듈 해석 성공(Reactor 6개 SUCCESS). 이 문서에 미리 기록한 BOM 관리 버전과 실제 해석 버전이 모두 일치한다.
+- 외부 의존성에 SNAPSHOT·범위·`LATEST`·`RELEASE` 버전이 없다. SNAPSHOT은 내부 모듈뿐이다(D-010).
+- 모듈 경계: collector와 persistence에는 웹·Tomcat·JSP·Flyway가 없고, web에는 Flyway가 없다. Flyway는 db-migration에만 있다(D-005, D-006).
+- PostgreSQL JDBC는 전 모듈 `runtime`, 테스트 라이브러리는 web `test` scope에만 있다.
+- Jackson이 두 계열로 존재한다. web은 Boot 4 기본인 Jackson 3(`tools.jackson`), db-migration은 Flyway가 쓰는 Jackson 2(`com.fasterxml`)다. 서로 다른 실행 단위라 같은 classpath에 섞이지 않는다.
+- 외부 Tomcat 배포 시 확인 사항: web WAR에는 내장 Tomcat(`tomcat-embed-*`)과 `jakarta.servlet-api`가 `compile` scope로 들어간다. 내장 Tomcat 실행(`java -jar`)에는 문제가 없다. 외부 Tomcat 배포가 필요해지면 scope 조정(`provided`)을 별도 변경 요청으로 검토한다(CLAUDE.md §3.2).
+- 루트 POM의 `<name/>`이 비어 있어 Reactor Summary에 루트 이름이 공란으로 표시된다. 빌드에는 영향이 없다.
+
+## 5. 개발자 확인 결과
 
 | 항목 | 상태 |
 |---|---|
-| `mvnw -v`, `java -version` | NOT_RUN (개발자 수행 예정) |
-| `mvnw validate` (Enforcer) | NOT_RUN (개발자 수행 예정) |
-| `mvnw help:effective-pom` | NOT_RUN (개발자 수행 예정) |
-| `mvnw dependency:tree` (전 모듈) | NOT_RUN (개발자 수행 예정) |
-| SBOM 생성 | NOT_RUN. 도구(플러그인) 미등록, 도입 시 승인 필요 |
-| 알려진 취약점 점검 | NOT_RUN. 점검 도구·결과 개발자 제공 필요 |
-| 빈 PostgreSQL 18 DB에서 Flyway 11.14.1 migration | NOT_RUN (개발자 수행 예정, T-32) |
+| `mvnw -v`, `java -version` | 확인 (2026-11-27 개발자 보고). Java 25, Maven 3.9.16(Wrapper, D-007). 설계 기준(기획안 v0.3 §3)과 일치 |
+| `validate` (Enforcer, D-010 적용 후) | 통과 (2026-11-27 개발자 보고, Eclipse m2e) |
+| `clean package` (전 모듈) | 통과 (2026-11-27 개발자 보고, Eclipse m2e). 테스트 소스 없음 |
+| DB 초기 구성 `Doc/DB/sql/00_bootstrap.sql` | 실행 완료 (2026-11-27 개발자 보고) |
+| WAR 기동·JSP 렌더링 (`WEB_DB_*`, `p27_web`) | 성공 (2026-11-27 개발자 보고) |
+| `help:effective-pom` | 성공 (2026-11-27 개발자 보고, Eclipse m2e) |
+| `dependency:tree` (전 모듈) | 성공 (2026-11-27 개발자 제공 출력). 전 모듈을 4절과 대조, 차이 없음 (4.5절) |
+| DB 서버 버전 | 확인 (2026-11-27 개발자 보고). PostgreSQL 18, 설계 기준과 일치 |
+| SBOM 생성 | DEV-00 범위 제외 |
+| 알려진 취약점 점검 | DEV-00 범위 제외 |
+| 빈 DB에서 db-migration 실행 (`p27_migration`, `app.flyway_schema_history`) | 성공 (2026-11-27 개발자 보고). migration 파일 없는 상태의 연결·이력 테이블 확인. DB 서버 PostgreSQL 18. T-32의 순차 적용·재실행·백업/복구는 DEV-01 이후 |
 
 ## 6. 승인 대기 라이브러리 (현재 미등록)
 
@@ -97,3 +149,4 @@
 | 날짜 | 변경 | 근거 |
 |---|---|---|
 | 2026-11-27 | 최초 작성. 멀티모듈 전환 후 직접 의존성 재배치, 루트 좌표 `project202701`, Maven Wrapper 3.9.16 | D-006, D-009, D-007 |
+| 2026-11-27 | Enforcer `banDynamicVersions` 내부 모듈 제외. 개발자 확인 결과(5절) 반영, 전 모듈 `dependency:tree` 대조로 4절 재작성 | D-010, D-008 |

@@ -70,7 +70,7 @@
   2. 단일 모듈 유지 시 web에서 `spring.flyway.enabled=false`로 두고 별도 실행 방법 마련
 - 결정: 1안. Flyway 의존성(`spring-boot-starter-flyway`, `flyway-database-postgresql`)은 `db-migration` 모듈에만 둔다. web/collector/persistence에는 Flyway 의존성을 두지 않아 자동 migration이 발생하지 않는다. `db-migration`은 웹 서버 없는 Boot 애플리케이션으로 migration 적용 후 종료하며 `clean-disabled=true`, `validate-on-migrate=true`를 명시한다.
 - 영향 범위: 루트/모듈 POM, `db-migration/src/main/resources/application.properties`, `db/migration` 경로
-- 검증: NOT_RUN (개발자 수행 예정). 빈 DB에서 `db-migration` 실행, web 기동 시 Flyway 미실행 확인
+- 검증: 2026-11-27 개발자 보고로 확인. 빈 DB에서 `db-migration` 실행 성공(`app.flyway_schema_history` 생성), web 기동 성공. web·collector·persistence 의존성 트리에 Flyway 없음(`dependency-lock.md` 4·5절). migration 파일 순차 적용·재실행(T-32)은 DEV-01 이후
 - 롤백: 이 커밋 이전 단일 모듈 POM으로 복원
 - 결정자: 박소명
 
@@ -93,7 +93,7 @@
 - 함께 처리: 사용자 지시에 따라 테스트 목적의 기존 소스 `testController`(구 테스트 DB `app.sample` 조회)와 `DemoApplicationTests`를 삭제했다. web의 DB 접속 설정(`web/src/main/resources/application.properties`)은 DB 교체 예정이라 내용 변경 없이 이동만 했다.
 - 신규 의존성: 없음. 기존 POM 직접 의존성을 모듈별로 재배치만 했다. 버전·scope 변경 없음.
 - 영향 범위: 전체 프로젝트 구조, Eclipse 프로젝트 구성(하위 모듈별 프로젝트), D-005
-- 검증: NOT_RUN (개발자 수행 예정). 루트에서 Java 25 빌드, `web` WAR와 `collector`/`db-migration` JAR 생성, effective POM 및 dependency tree 확인
+- 검증: 2026-11-27 개발자 보고로 확인. Eclipse m2e에서 루트 `clean package` 통과(WAR/JAR 생성), `help:effective-pom` 및 전 모듈 `dependency:tree` 확인(`dependency-lock.md` 5절)
 - 롤백: 이 커밋 이전 단일 모듈 구조로 복원
 - 결정자: 박소명
 
@@ -105,7 +105,7 @@
 - 충돌 내용: 루트 Maven 좌표가 초기 생성 시의 `com.security:demo`였고, 저장소 폴더명·하위 모듈 이름(`project202701-*`)과 맞지 않았다. `CLAUDE.md`/`AGENTS.md` §3.1 스냅샷은 `com.security:demo:0.0.1-SNAPSHOT`으로 기록되어 있다.
 - 결정: 루트 artifactId를 `project202701`로 변경(`com.security:project202701:0.0.1-SNAPSHOT`). 하위 모듈의 parent 참조를 같이 변경했다. web `spring.application.name`도 `project202701-web`으로 변경했다.
 - 영향 범위: 루트 및 모든 모듈 POM, web `application.properties`(DB 설정 제외), Eclipse 루트 프로젝트 이름. `CLAUDE.md`/`AGENTS.md` §3.1 스냅샷과 달라지며, 지침상 실제 POM이 우선한다. 지침 문서 갱신 여부는 별도 확인.
-- 검증: NOT_RUN (개발자 수행 예정). 루트 빌드 시 모듈 parent 해석 확인
+- 검증: 2026-11-27 개발자 보고로 확인. 루트 `validate`/`clean package` 통과로 모듈 parent 해석 확인. `CLAUDE.md`/`AGENTS.md` §3.1 스냅샷은 `com.security:project202701`로 갱신됨
 - 롤백: artifactId를 `demo`로 복원
 - 결정자: 박소명
 
@@ -121,7 +121,7 @@
 - 결정: 2안. Wrapper 배포판을 Maven 3.9.16으로 변경. 2026-11-27 기준 Maven Central `apache-maven` 메타데이터의 3.9 계열 최고 GA이며(`apache-maven-3.9.16-bin.zip` 존재 확인), Eclipse 2026-09 m2e 내장 런타임(`org.eclipse.m2e.maven.runtime_3.9.1601`)과 같은 계열이다. Enforcer `requireMavenVersion [3.9,)`는 변경하지 않았다.
 - 영향 범위: `.mvn/wrapper/maven-wrapper.properties`. 로컬에 받아 둔 3.10.1 배포판은 더 이상 쓰이지 않는다.
 - 제한: Wrapper `distributionSha256Sum` 검증값은 설정하지 않았다(필요 시 공식 checksum 확인 후 추가). 기존 TLS 오류(SEC_E_UNTRUSTED_ROOT)로 Wrapper 다운로드가 실패할 수 있다.
-- 검증: NOT_RUN (개발자 수행 예정). `mvnw -v`로 3.9.16 확인
+- 검증: 2026-11-27 개발자 보고로 확인. Maven 3.9.16, Java 25로 설계 기준과 일치
 - 롤백: distributionUrl을 3.10.1로 복원
 - 결정자: 박소명
 
@@ -138,24 +138,34 @@
 - 결정: 1안. 루트 `pom.xml`의 `banDynamicVersions`에 `<ignore>com.security:project202701-*</ignore>`를 추가했다. 외부 의존성의 SNAPSHOT·범위·`LATEST`·`RELEASE` 금지는 유지된다. 2·3안은 외부 SNAPSHOT까지 허용하므로 채택하지 않았다.
 - 근거: Maven Enforcer 공식 문서(banDynamicVersions, 3.7.0 문서) `ignores` 형식 `groupId[:artifactId[:version...]]`, 와일드카드 지원. 현재 Boot 부모 관리 enforcer 버전은 3.6.3이며 해당 버전의 `ignores` 지원은 개발자 빌드로 확인한다.
 - 영향 범위: 루트 `pom.xml`(전 모듈 상속), `Doc/docs/dependency-lock.md`
-- 검증: NOT_RUN (개발자 수행 예정). 루트에서 `mvnw validate`로 Enforcer 통과 확인
+- 검증: 2026-11-27 개발자 보고로 확인. Eclipse m2e(Enforcer 3.6.3)에서 `validate`와 `clean package` 통과. `ignores`가 3.6.3에서 동작함을 확인
 - 롤백: `banDynamicVersions`의 `ignores` 제거
+- 결정자: 박소명
+
+## D-008 DB 계정 분리 및 접속 설정
+
+- 날짜: 2026-11-27 (결정 2026-11-27)
+- 상태: 결정
+- 관련: DEV-00 WP-00-02, 기획안 v0.3 §7(데이터 원칙, DB 역할)·§12.2, CLAUDE.md §4·§8.2, T-28, T-32
+- 충돌 내용: 기획안은 migration(DDL) 계정과 web/collector 런타임 계정을 분리하도록 요구한다. web `application.properties`에는 구 테스트 DB(192.168.56.101, `testuser`) 주소와 기본 비밀번호가 남아 있었고, 주석("환경변수 권장")과 실제 설정(기본 비밀번호 사용)이 맞지 않았다.
+- 대안:
+  1. web도 환경변수 전용(`WEB_DB_*`)으로 전환, 비밀 없는 설정만 커밋
+  2. Git 제외 로컬 프로필 파일 사용
+- 결정: 1안. 새 개발 DB `192.168.56.1:5432`를 기준으로 다음과 같이 정한다.
+  - 데이터베이스 `project202701`(UTF-8, 소유자 `p27_migration`, DB 기본 timezone UTC), 업무 스키마 `app`(소유자 `p27_migration`). `public` 스키마는 PUBLIC 권한 회수.
+  - 계정: `p27_migration`(DDL 전용, db-migration만 사용), `p27_web`(웹 런타임), `p27_collector`(수집기 런타임). 런타임 계정은 현 단계에서 CONNECT와 `app` USAGE만 가진다. 테이블·컬럼·함수 권한은 DEV-01 migration에서 최소 권한으로 부여한다(관측 원본·작업 완료 상태에 대한 web UPDATE/DELETE 금지, T-28).
+  - 세 계정 모두 `project202701`에서 `search_path=app`.
+  - 접속 정보: web `WEB_DB_URL/USERNAME/PASSWORD`, collector `COLLECTOR_DB_*`, db-migration `MIGRATION_DB_*`. 모두 환경변수 전용이며 기본값이 없어 미설정 시 기동 실패한다.
+  - db-migration은 `spring.flyway.schemas=app`, `spring.flyway.create-schemas=false`로 이력 테이블을 `app`에 두고, 스키마는 초기 구성 스크립트로만 만든다(누락 시 migration 실패).
+- 초기 구성: DB·계정·스키마 생성은 개발자가 관리자 계정으로 1회 수행한다. 스크립트와 명세: `Doc/DB/sql/00_bootstrap.sql`, `Doc/DB/Project202701_DB_환경_및_계정_명세.md`. 비밀번호는 스크립트에 쓰지 않고 psql `\password`로 입력한다.
+- 제한: 구 테스트 DB 비밀번호가 이전 커밋(`6e99a67`, `5e441d4` 등)의 `application.properties`에 남아 있다. 이력 재작성은 하지 않았다. 해당 계정이 다른 곳에서 쓰이면 비밀번호를 바꾸거나 폐기한다.
+- 영향 범위: web/db-migration `application.properties`, README 환경 설정, `Doc/DB/`. DEV-01 DB 역할·권한 migration의 전제.
+- 검증: 2026-11-27 개발자 보고로 확인. 초기 구성 스크립트 실행, `p27_migration`으로 db-migration 실행(`app.flyway_schema_history` 생성), `WEB_DB_*` 설정 후 web 기동·JSP 렌더링 성공. 런타임 계정 최소 권한(T-28)은 DEV-01 이후 확인
+- 롤백: web `application.properties`를 이전 버전으로 복원, db-migration의 `spring.flyway.schemas`/`create-schemas` 제거. DB 객체는 명세서의 정리 절차(관리자 수행)로 제거
 - 결정자: 박소명
 
 ---
 
 ## 미결정 항목
 
-## D-008 DB 계정 분리 및 접속 설정
-
-- 날짜: 2026-11-27
-- 상태: 미결정
-- 관련: 기획안 v0.3 §7·§12.2, CLAUDE.md §4·§8.2, T-28, T-32
-- 충돌 내용: 기획안은 migration(DDL) 계정과 web/collector 런타임 계정을 분리하도록 요구한다. 새 개발 DB와 계정은 아직 정해지지 않았다. web 모듈 `application.properties`에는 구 테스트 DB 주소와 기본 비밀번호가 남아 있다(DB 교체 예정으로 사용자 지시에 따라 유지).
-- 현재 상태: `db-migration`은 `MIGRATION_DB_URL/USERNAME/PASSWORD`, `collector`는 `COLLECTOR_DB_URL/USERNAME/PASSWORD` 환경변수만 사용하며 기본값이 없다.
-- 대안:
-  1. web도 환경변수 전용(`WEB_DB_*`)으로 전환, 비밀 없는 예제 파일만 커밋
-  2. Git 제외 로컬 프로필 파일 사용
-- 결정: 없음 (새 DB 확정 시 결정)
-- 영향 범위: 각 모듈 `application.properties`, DB 역할 생성 스크립트(DEV-01)
-- 결정자: 미정
+(현재 없음)
