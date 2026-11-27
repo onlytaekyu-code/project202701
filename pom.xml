@@ -9,9 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.security</groupId>
-	<artifactId>demo</artifactId>
+	<artifactId>project202701</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
+	<!-- 집계(aggregator) 및 공통 부모 POM. 실행 단위는 하위 모듈이다. -->
+	<packaging>pom</packaging>
 	<name/>
 	<description/>
 	<url/>
@@ -27,73 +28,47 @@
 		<tag/>
 		<url/>
 	</scm>
+
+	<modules>
+		<module>common</module>
+		<module>persistence</module>
+		<module>db-migration</module>
+		<module>web</module>
+		<module>collector</module>
+	</modules>
+
 	<properties>
 		<java.version>25</java.version>
 		<!-- Boot BOM이 관리하지 않는 라이브러리 버전 -->
 		<mybatis-spring-boot.version>4.0.1</mybatis-spring-boot.version>
 	</properties>
-	<dependencies>
-    <!-- 웹 (Spring MVC, 내장 Tomcat 11) -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-webmvc</artifactId>
-    </dependency>
 
-    <!-- JSP 렌더링 -->
-    <dependency>
-        <groupId>org.apache.tomcat.embed</groupId>
-        <artifactId>tomcat-embed-jasper</artifactId>
-    </dependency>
+	<dependencyManagement>
+		<dependencies>
+			<!-- 내부 모듈 -->
+			<dependency>
+				<groupId>com.security</groupId>
+				<artifactId>project202701-common</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.security</groupId>
+				<artifactId>project202701-persistence</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 
-    <!-- Jakarta JSTL -->
-    <dependency>
-        <groupId>jakarta.servlet.jsp.jstl</groupId>
-        <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.glassfish.web</groupId>
-        <artifactId>jakarta.servlet.jsp.jstl</artifactId>
-    </dependency>
-
-    <!-- MyBatis (spring-boot-starter-jdbc, HikariCP 포함) -->
-    <dependency>
-        <groupId>org.mybatis.spring.boot</groupId>
-        <artifactId>mybatis-spring-boot-starter</artifactId>
-        <version>${mybatis-spring-boot.version}</version>
-    </dependency>
-
-    <!-- Flyway DB 마이그레이션 -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-flyway</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.flywaydb</groupId>
-        <artifactId>flyway-database-postgresql</artifactId>
-    </dependency>
-
-    <!-- PostgreSQL 드라이버 -->
-    <dependency>
-        <groupId>org.postgresql</groupId>
-        <artifactId>postgresql</artifactId>
-        <scope>runtime</scope>
-    </dependency>
-
-    <!-- 테스트 (JUnit, @SpringBootTest) -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-test</artifactId>
-        <scope>test</scope>
-    </dependency>
-</dependencies>
+			<!-- MyBatis (spring-boot-starter-jdbc, HikariCP 포함) -->
+			<dependency>
+				<groupId>org.mybatis.spring.boot</groupId>
+				<artifactId>mybatis-spring-boot-starter</artifactId>
+				<version>${mybatis-spring-boot.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<build>
 		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-			<!-- 재현 가능한 빌드를 위한 Java/Maven 버전 및 동적 버전 금지 -->
+			<!-- 재현 가능한 빌드를 위한 Java/Maven 버전 및 동적 버전 금지 (모든 하위 모듈에 상속) -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
@@ -111,7 +86,13 @@
 								<requireMavenVersion>
 									<version>[3.9,)</version>
 								</requireMavenVersion>
-								<banDynamicVersions/>
+								<banDynamicVersions>
+									<!-- 같은 리액터의 내부 모듈은 프로젝트 버전(0.0.1-SNAPSHOT)을 공유하므로 제외한다(D-010).
+									     외부 의존성의 SNAPSHOT, 범위, LATEST, RELEASE는 계속 금지한다. -->
+									<ignores>
+										<ignore>com.security:project202701-*</ignore>
+									</ignores>
+								</banDynamicVersions>
 							</rules>
 						</configuration>
 					</execution>
